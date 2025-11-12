@@ -163,7 +163,8 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
 
     switch (_periodoSeleccionado) {
       case 'por_mes':
-        if (_mesSeleccionado != null && mesesOrdenados.contains(_mesSeleccionado)) {
+        if (_mesSeleccionado != null &&
+            mesesOrdenados.contains(_mesSeleccionado)) {
           return [_mesSeleccionado!];
         }
         return mesesOrdenados.isNotEmpty ? [mesesOrdenados.last] : [];
@@ -311,7 +312,7 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
                 _buildChipPeriodo('ultimos3meses', 'Últimos 3 meses'),
                 _buildChipPeriodo('ultimos6meses', 'Últimos 6 meses'),
                 _buildChipPeriodo('ultimo_ano', 'Último año'),
-                _buildChipPeriodo('todos', 'Todo el período'),
+                _buildChipPeriodo('todos', 'Todos los cálculos'),
               ],
             ),
             if (_periodoSeleccionado == 'por_mes') ...[
@@ -322,13 +323,18 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Mes',
                   border: OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 12,
+                  ),
                 ),
                 items: _obtenerMesesDisponibles()
-                    .map((m) => DropdownMenuItem<String>(
-                          value: m,
-                          child: Text(m, overflow: TextOverflow.ellipsis),
-                        ))
+                    .map(
+                      (m) => DropdownMenuItem<String>(
+                        value: m,
+                        child: Text(m, overflow: TextOverflow.ellipsis),
+                      ),
+                    )
                     .toList(),
                 onChanged: (valor) {
                   setState(() {

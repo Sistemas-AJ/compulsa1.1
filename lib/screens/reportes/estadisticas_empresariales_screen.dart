@@ -160,30 +160,6 @@ class _EstadisticasEmpresarialesScreenState
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildKPICard(
-                'Promedio por Operación',
-                'S/ ${_formatMonto(promedioVentas)}',
-                Icons.analytics,
-                AppColors.primary,
-                'Rendimiento',
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildKPICard(
-                'Operaciones',
-                totalCalculos.toString(),
-                Icons.calculate,
-                AppColors.secondary,
-                'Total mes',
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }

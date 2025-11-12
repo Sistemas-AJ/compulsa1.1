@@ -79,6 +79,30 @@ class HistorialIGVService {
     return 0.0;
   }
 
+  // Obtener el saldo anterior para el mes de una fecha de referencia.
+  // Devuelve el saldoResultante del último registro con fecha anterior
+  // al primer día del mes indicado.
+  static Future<double> obtenerSaldoAnteriorPara(DateTime fechaReferencia) async {
+    await _crearTabla();
+    final dbService = DatabaseService();
+    final db = await dbService.database;
+
+    final inicioMes = DateTime(fechaReferencia.year, fechaReferencia.month, 1);
+
+    final List<Map<String, dynamic>> maps = await db.query(
+      'historial_igv',
+      where: 'fechaCalculo < ?',
+      whereArgs: [inicioMes.toIso8601String()],
+      orderBy: 'fechaCalculo DESC',
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return maps.first['saldoResultante']?.toDouble() ?? 0.0;
+    }
+    return 0.0;
+  }
+
   // Obtener todos los cálculos ordenados por fecha (más reciente primero)
   static Future<List<HistorialIGV>> obtenerTodosLosCalculos() async {
     await _crearTabla();

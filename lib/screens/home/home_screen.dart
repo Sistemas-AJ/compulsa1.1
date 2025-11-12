@@ -25,13 +25,31 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _cargarDatos() async {
     try {
-      // Cargar último IGV calculado
-      final ultimoCalculoIGV = await HistorialIGVService.obtenerUltimoCalculo();
-      final ultimoImpuestoIGV = ultimoCalculoIGV?.igvPorPagar ?? 0.0;
+      // Periodo: mes actual
+      final ahora = DateTime.now();
+      final inicioMes = DateTime(ahora.year, ahora.month, 1);
+      final finMes = DateTime(ahora.year, ahora.month + 1, 0, 23, 59, 59);
 
-      // Cargar última Renta calculada
-      final ultimoImpuestoRenta =
-          await HistorialRentaService.obtenerUltimoImpuesto();
+      // IGV del mes actual (si no hay, mostrar 0)
+      final igvMes = await HistorialIGVService.obtenerCalculosPorPeriodo(
+        desde: inicioMes,
+        hasta: finMes,
+      );
+      double ultimoImpuestoIGV = 0.0;
+      if (igvMes.isNotEmpty) {
+        final h = igvMes.first; // ordenado DESC en el service
+        ultimoImpuestoIGV = h.igvPorPagar > 0 ? h.igvPorPagar : h.saldoAFavor;
+      }
+
+      // Renta del mes actual (si no hay, mostrar 0)
+      final rentaMes = await HistorialRentaService.obtenerPorPeriodo(
+        fechaInicio: inicioMes,
+        fechaFin: finMes,
+      );
+      double ultimoImpuestoRenta = 0.0;
+      if (rentaMes.isNotEmpty) {
+        ultimoImpuestoRenta = rentaMes.first.rentaPorPagar;
+      }
 
       if (mounted) {
         setState(() {
@@ -274,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Resumen del Mes (pagado)',
+            'Resumen de este mes',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -449,19 +467,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
-        _buildMainActionCard(
-          context,
-          icon: Icons.description_outlined,
-          title: 'Declaraciones',
-          subtitle: 'Gestionar declaraciones mensuales y anuales',
-          color: AppColors.igvColor,
-          onTap: () async {
-            await AppRoutes.navigateTo(context, AppRoutes.declaraciones);
-            // Recargar datos por si se crearon nuevas declaraciones
-            _cargarDatos();
-          },
-        ),
         const SizedBox(height: 16),
         _buildMainActionCard(
           context,
@@ -472,6 +477,19 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: () async {
             await AppRoutes.navigateTo(context, AppRoutes.reportes);
             // Recargar datos por si se accedieron a reportes
+            _cargarDatos();
+          },
+        ),
+        const SizedBox(height: 20),
+        _buildMainActionCard(
+          context,
+          icon: Icons.description_outlined,
+          title: 'Declaraciones',
+          subtitle: 'Gestionar declaraciones mensuales y anuales',
+          color: AppColors.igvColor,
+          onTap: () async {
+            await AppRoutes.navigateTo(context, AppRoutes.declaraciones);
+            // Recargar datos por si se crearon nuevas declaraciones
             _cargarDatos();
           },
         ),

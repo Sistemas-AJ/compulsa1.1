@@ -131,7 +131,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _buildMetricCard(
-                    'IGV Acumulado',
+                    'IGV acumulado Pagado',
                     'S/ ${totalIgvPagado.toStringAsFixed(2)}',
                     AppColors.igvColor,
                     Icons.payment,

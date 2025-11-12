@@ -11,7 +11,7 @@ class CalculoService {
 
   // Obtener el saldo anterior del último cálculo
   static Future<double> obtenerSaldoAnterior() async {
-    return await HistorialIGVService.obtenerUltimoSaldo();
+    return await HistorialIGVService.obtenerSaldoAnteriorPara(DateTime.now());
   }
 
   static Future<Map<String, dynamic>> calcularIgv({
