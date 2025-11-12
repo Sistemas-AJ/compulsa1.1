@@ -100,6 +100,27 @@ class _ReportesScreenState extends State<ReportesScreen> {
     final totalCalculos = resumen?['total_calculos'] ?? 0;
     final totalIgvPagado = resumen?['total_igv_pagado'] ?? 0.0;
     final totalSaldoFavor = resumen?['total_saldo_favor'] ?? 0.0;
+    // Total de Renta pagada en todos los periodos
+    final totalRentaPagada = (_resumenRenta != null)
+        ? ((_resumenRenta!['total_a_pagar'] ?? 0.0) as num).toDouble()
+        : 0.0;
+
+    // Cálculos derivados para resumen general adicional
+    final totalVentasAll = _historialIGV.fold<double>(
+      0.0,
+      (sum, h) => sum + (h.ventasGravadas),
+    );
+    final totalComprasAll = _historialIGV.fold<double>(
+      0.0,
+      (sum, h) => sum + (h.compras18 + h.compras10),
+    );
+    final cantIgv = _historialIGV.length;
+    final promedioCompras = cantIgv > 0 ? (totalComprasAll / cantIgv) : 0.0;
+    final cantRenta = _historialRenta.length;
+    final promedioRenta = cantRenta > 0
+        ? (_historialRenta.fold<double>(0.0, (s, r) => s + r.rentaPorPagar) /
+              cantRenta)
+        : 0.0;
 
     return Card(
       child: Padding(
@@ -108,7 +129,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Resumen de Cálculos IGV',
+              'Resumen General',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -144,14 +165,25 @@ class _ReportesScreenState extends State<ReportesScreen> {
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    'Cálculos',
+                    'Meses Calculados',
                     totalCalculos.toString(),
                     AppColors.primary,
                     Icons.calculate,
                   ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildMetricCard(
+                    'Renta acumulada Pagada',
+                    'S/ ${totalRentaPagada.toStringAsFixed(2)}',
+                    AppColors.secondary,
+                    Icons.account_balance,
+                  ),
+                ),
               ],
             ),
+
+            // Resumen ampliado: totales/medias a través de todos los periodos
           ],
         ),
       ),
@@ -165,7 +197,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
         DashboardCard(
           icon: Icons.pie_chart,
           title: 'Resumen General',
-          subtitle: 'IGV y Renta por empresa',
+          subtitle: 'IGV y Renta de tu empresa',
           color: AppColors.primary,
           onTap: () => Navigator.push(
             context,

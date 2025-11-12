@@ -121,17 +121,55 @@ class _RentaScreenState extends State<RentaScreen> {
   // Cargar las ventas del último cálculo de IGV
   Future<void> _cargarUltimasVentas() async {
     try {
-      final ultimasVentas = await HistorialIGVService.obtenerUltimasVentas();
-      if (mounted && ultimasVentas > 0) {
+      final ahora = DateTime.now();
+      final inicioMes = DateTime(ahora.year, ahora.month, 1);
+      final finMes = DateTime(ahora.year, ahora.month + 1, 0, 23, 59, 59);
+
+      // 1) Preferir datos de Renta del mes actual
+      final rentaMes = await HistorialRentaService.obtenerPorPeriodo(
+        fechaInicio: inicioMes,
+        fechaFin: finMes,
+      );
+      if (mounted && rentaMes.isNotEmpty) {
+        final r = rentaMes.first;
         setState(() {
-          _ingresosController.text = ultimasVentas.toStringAsFixed(2);
+          _ingresosController.text = r.ingresos.toStringAsFixed(2);
+          _gastosController.text = r.gastos.toStringAsFixed(2);
         });
-        
-        // Mostrar un mensaje informativo
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Se cargaron automáticamente las ventas del último cálculo de IGV: S/ ${ultimasVentas.toStringAsFixed(2)}',
+              'Datos cargados del cálculo de Renta del mes actual: Ingresos S/ ${r.ingresos.toStringAsFixed(2)}',
+            ),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Limpiar',
+              textColor: Colors.white,
+              onPressed: () {
+                _ingresosController.clear();
+                _gastosController.clear();
+              },
+            ),
+          ),
+        );
+        return;
+      }
+
+      // 2) Si no hay Renta del mes, usar ventas de IGV del mes actual
+      final igvMes = await HistorialIGVService.obtenerCalculosPorPeriodo(
+        desde: inicioMes,
+        hasta: finMes,
+      );
+      if (mounted && igvMes.isNotEmpty) {
+        final ventasMes = igvMes.first.ventasGravadas;
+        setState(() {
+          _ingresosController.text = ventasMes.toStringAsFixed(2);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Se cargaron ventas del IGV del mes actual: S/ ${ventasMes.toStringAsFixed(2)}',
             ),
             backgroundColor: AppColors.success,
             duration: const Duration(seconds: 3),
@@ -147,7 +185,7 @@ class _RentaScreenState extends State<RentaScreen> {
       }
     } catch (e) {
       // En caso de error, no hacer nada - el campo queda vacío
-      print('Error al cargar últimas ventas: $e');
+      print('Error al cargar datos del mes actual: $e');
     }
   }
   

@@ -572,6 +572,14 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
               padding: const EdgeInsets.all(12),
               child: _buildGraficoLineas(mesesFiltrados, 'igv'),
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildLegendSwatch(AppColors.igvColor, 'IGV pagado'),
+                const SizedBox(width: 16),
+                _buildLegendSwatch(AppColors.saldoFavorColor, 'Saldo a favor'),
+              ],
+            ),
           ],
         ),
       ),
@@ -651,12 +659,14 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
         child: Text('No hay datos suficientes para mostrar el gráfico'),
       );
     }
+    // Mostrar desde el más reciente al más antiguo
+    final mesesDesc = meses.reversed.toList();
 
     return ListView.builder(
       scrollDirection: Axis.horizontal,
-      itemCount: meses.length,
+      itemCount: mesesDesc.length,
       itemBuilder: (context, index) {
-        final mes = meses[index];
+        final mes = mesesDesc[index];
         final datos = _datosEvolucion[tipo][mes];
 
         if (datos == null) {
@@ -701,15 +711,27 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
         Color color;
 
         if (tipo == 'igv') {
-          valor = (datos['igvPagado'] ?? 0.0) + (datos['saldoFavor'] ?? 0.0);
-          color = AppColors.igvColor;
+          final double igvPagado = (datos['igvPagado'] ?? 0.0).toDouble();
+          final double saldoFavor = (datos['saldoFavor'] ?? 0.0).toDouble();
+          // En un mes normalmente hay o pago o saldo a favor; coloreamos según el caso
+          if (igvPagado > 0 && saldoFavor <= 0) {
+            valor = igvPagado;
+            color = AppColors.igvColor; // color para IGV pagado
+          } else if (saldoFavor > 0 && igvPagado <= 0) {
+            valor = saldoFavor;
+            color = AppColors.saldoFavorColor; // color para saldo a favor
+          } else {
+            // Caso mixto o cero (poco probable); usar suma y color base
+            valor = (igvPagado + saldoFavor);
+            color = AppColors.igvColor;
+          }
         } else {
           valor = datos['rentaPagada'] ?? 0.0;
           color = AppColors.secondary;
         }
 
         // Normalizar altura (máximo 100px para evitar overflow)
-        final maxValor = _obtenerMaxValor(meses, tipo);
+        final maxValor = _obtenerMaxValor(mesesDesc, tipo);
         final altura = maxValor > 0
             ? (valor / maxValor * 100).clamp(5.0, 100.0)
             : 5.0;
@@ -765,6 +787,27 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
     );
   }
 
+  Widget _buildLegendSwatch(Color color, String label) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+
   double _obtenerMaxValor(List<String> meses, String tipo) {
     double max = 0;
     for (final mes in meses) {
@@ -813,7 +856,10 @@ class _EvolucionMensualScreenState extends State<EvolucionMensualScreen> {
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
             const SizedBox(height: 20),
-            ...mesesFiltrados.map((mes) => _buildFilaMes(mes)).toList(),
+            // Mostrar de más reciente a más antiguo
+            ...mesesFiltrados.reversed
+                .map((mes) => _buildFilaMes(mes))
+                .toList(),
           ],
         ),
       ),

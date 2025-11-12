@@ -898,9 +898,9 @@ class _EstadisticasEmpresarialesScreenState
     // Tomar los últimos 6 cálculos para el gráfico
     final ultimos = _historialIGV.take(6).toList().reversed.toList();
     return ultimos.asMap().entries.map((entry) {
-      final index = entry.key + 1;
       final calculo = entry.value;
-      return ChartData('Op $index', calculo.ventasGravadas);
+      final label = _mesAnio(calculo.fechaCalculo);
+      return ChartData(label, calculo.ventasGravadas);
     }).toList();
   }
 
@@ -910,11 +910,19 @@ class _EstadisticasEmpresarialesScreenState
     // Tomar los últimos 6 cálculos para el gráfico
     final ultimos = _historialIGV.take(6).toList().reversed.toList();
     return ultimos.asMap().entries.map((entry) {
-      final index = entry.key + 1;
       final calculo = entry.value;
       final igvValue = calculo.tieneSaldoAFavor ? 0.0 : calculo.igvPorPagar;
-      return ChartData('Op $index', igvValue);
+      final label = _mesAnio(calculo.fechaCalculo);
+      return ChartData(label, igvValue);
     }).toList();
+  }
+
+  String _mesAnio(DateTime fecha) {
+    const meses = [
+      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    ];
+    return '${meses[fecha.month - 1]} ${fecha.year}';
   }
 
   String _formatMonto(double monto) {
