@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/utils/format_utils.dart';
 import '../../services/calculo_service.dart';
+import '../../services/historial_igv_service.dart';
 import '../../services/actividad_reciente_service.dart';
 import '../../widgets/compulsa_appbar.dart';
 
@@ -98,6 +99,45 @@ class _IgvScreenState extends State<IgvScreen> with TickerProviderStateMixin {
         ),
       );
       return;
+    }
+
+    // Verificar si ya existe un cálculo en el mes actual
+    final ahora = DateTime.now();
+    final inicioMes = DateTime(ahora.year, ahora.month, 1);
+    final finMes = DateTime(ahora.year, ahora.month + 1, 0, 23, 59, 59);
+
+    try {
+      final existentes = await HistorialIGVService.obtenerCalculosPorPeriodo(
+        desde: inicioMes,
+        hasta: finMes,
+      );
+      if (existentes.isNotEmpty) {
+        final deseaActualizar = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Cálculo existente este mes'),
+            content: const Text(
+              'Ya existe un cálculo de IGV registrado para este mes. ¿Deseas actualizar los datos reemplazando el cálculo existente?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Actualizar'),
+              ),
+            ],
+          ),
+        );
+
+        if (deseaActualizar != true) {
+          return; // Usuario canceló
+        }
+      }
+    } catch (_) {
+      // Si hay error en la verificación, permitimos continuar
     }
 
     setState(() {

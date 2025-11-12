@@ -37,6 +37,21 @@ class HistorialRentaService {
     final dbService = DatabaseService();
     final db = await dbService.database;
 
+    // Asegurar un único cálculo por mes: si ya existe uno en el mismo mes,
+    // lo reemplazamos (eliminamos el anterior y luego insertamos el nuevo).
+    final inicioMes = DateTime(historial.fechaCalculo.year, historial.fechaCalculo.month, 1);
+    final inicioMesSiguiente = DateTime(
+      historial.fechaCalculo.month == 12 ? historial.fechaCalculo.year + 1 : historial.fechaCalculo.year,
+      historial.fechaCalculo.month == 12 ? 1 : historial.fechaCalculo.month + 1,
+      1,
+    );
+
+    await db.delete(
+      'historial_renta',
+      where: 'fechaCalculo >= ? AND fechaCalculo < ?',
+      whereArgs: [inicioMes.toIso8601String(), inicioMesSiguiente.toIso8601String()],
+    );
+
     await db.insert(
       'historial_renta',
       historial.toMap(),

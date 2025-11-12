@@ -6,7 +6,9 @@ import '../../services/calculo_service.dart';
 import '../../services/database_service.dart';
 import '../../services/actividad_reciente_service.dart';
 import '../../services/historial_igv_service.dart';
+import '../../services/historial_renta_service.dart';
 import '../../models/regimen_tributario.dart';
+import '../../models/database_models.dart';
 import '../../widgets/compulsa_appbar.dart';
 
 class RentaScreen extends StatefulWidget {
@@ -47,7 +49,15 @@ class _RentaScreenState extends State<RentaScreen> {
 
   Future<void> _cargarRegimenes() async {
     try {
-      final regimenes = await DatabaseService().obtenerRegimenes();
+      final db = DatabaseService();
+      final regimenes = await db.obtenerRegimenes();
+      int? regimenEmpresaId;
+      try {
+        final empresas = await db.obtenerEmpresas();
+        if (empresas.isNotEmpty) {
+          regimenEmpresaId = empresas.first.regimenId;
+        }
+      } catch (_) {}
       setState(() {
         _regimenes = regimenes;
         _cargandoRegimenes = false;
@@ -56,6 +66,13 @@ class _RentaScreenState extends State<RentaScreen> {
           _regimenSeleccionado = _regimenes.first.id;
         }
       });
+      // Si hay un régimen configurado en Perfil de Empresa y existe en la lista, preseleccionarlo
+      if (regimenEmpresaId != null &&
+          _regimenes.any((r) => r.id == regimenEmpresaId)) {
+        setState(() {
+          _regimenSeleccionado = regimenEmpresaId;
+        });
+      }
     } catch (e) {
       setState(() {
         _cargandoRegimenes = false;
@@ -426,6 +443,45 @@ class _RentaScreenState extends State<RentaScreen> {
 
     // Las opciones MYPE ya se calculan automáticamente en _verificarOpcionesMYPE()
     final regimenSeleccionado = _regimenes.firstWhere((r) => r.id == _regimenSeleccionado);
+
+    // Verificar si ya existe un cálculo de Renta en el mes actual
+    final ahora = DateTime.now();
+    final inicioMes = DateTime(ahora.year, ahora.month, 1);
+    final finMes = DateTime(ahora.year, ahora.month + 1, 0, 23, 59, 59);
+
+    try {
+      final existentes = await HistorialRentaService.obtenerPorPeriodo(
+        fechaInicio: inicioMes,
+        fechaFin: finMes,
+      );
+      if (existentes.isNotEmpty) {
+        final deseaActualizar = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Cálculo existente este mes'),
+            content: const Text(
+              'Ya existe un cálculo de Renta registrado para este mes. ¿Deseas actualizar los datos reemplazando el cálculo existente?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(ctx).pop(true),
+                child: const Text('Actualizar'),
+              ),
+            ],
+          ),
+        );
+
+        if (deseaActualizar != true) {
+          return; // Usuario canceló
+        }
+      }
+    } catch (_) {
+      // Si hay error en la verificación, permitimos continuar
+    }
 
     setState(() {
       _isCalculating = true;
