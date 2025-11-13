@@ -1,3 +1,5 @@
+
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -31,7 +33,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.compulsa"
+        applicationId = "com.adolfojuradorosas.compulsa"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -41,37 +43,18 @@ android {
     // Define la configuración de firma "release"
     signingConfigs {
         create("release") {
-            // Obtenemos todas las propiedades primero
-            val storeFilePath = keystoreProperties.getProperty("storeFile")
-            val storePass = keystoreProperties.getProperty("storePassword")
-            val keyAliasVal = keystoreProperties.getProperty("keyAlias")
-            val keyPass = keystoreProperties.getProperty("keyPassword")
-
-            // Verificamos que NINGUNA sea nula
-            if (storeFilePath != null && storePass != null && keyAliasVal != null && keyPass != null) {
-
-                // --- ¡ESTA ES LA CORRECCIÓN! ---
-                // Usamos file() en lugar de rootProject.file()
-                // file() SÍ sabe manejar rutas absolutas.
-                storeFile = file(storeFilePath) 
-                // ---------------------------------
-
-                storePassword = storePass
-                keyAlias = keyAliasVal
-                keyPassword = keyPass
-            } else {
-                // Si falta algo, fallamos con un error claro.
-                throw GradleException("Faltan propiedades de firma en android/key.properties. " +
-                    "Asegúrate de que storeFile, storePassword, keyAlias, y keyPassword estén definidos.")
-            }
+            storeFile = file("upload-key.jks")  // o file("upload-key.jks") si lo pones en android/app
+            storePassword = "lavacalola"
+            keyAlias = "upload"
+            keyPassword = "lavacalola"
         }
     }
 
     buildTypes {
         release {
-            // Le decimos a Gradle que use nuestra firma "release"
             signingConfig = signingConfigs.getByName("release")
         }
+
     }
 }
 
